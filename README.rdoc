@@ -1,28 +1,17 @@
-== README
+= README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+== About
+MBFC API is a service created to improve usability of Media Bias/Fact Check's (https://mediabiasfactcheck.com/) media reliability research and allow for third parties to more easily innovate around those data.
 
-Things you may want to cover:
+== Usage
+MBFC API currently has only one endpoint, which can be reached at http://mbfcapi.herokuapp.com (more specifically, this redirects to the actual endpoint /api/v1/sources).
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
-
-
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+== Data
+The data provided by the API, in JSON form, are:
+* "name": Source name, downcased
+* "display_name": Display name, native form
+* "url": Source URL
+* "bias": Source bias
+* "accuracy": Source accuracy
+* "mbfc_url": MBFC source summary URL
+* "date_verified": Date the data were extracted from MBFC
