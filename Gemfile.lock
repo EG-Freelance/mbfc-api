@@ -56,7 +56,7 @@ GEM
     minitest (5.11.3)
     nokogiri (1.9.1)
       mini_portile2 (~> 2.4.0)
-    pg (1.1.4)
+    pg (0.21.0)
     rack (1.6.11)
     rack-test (0.6.3)
       rack (>= 1.0)
@@ -116,7 +116,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  pg
+  pg (~> 0.18)
   rails (= 4.2.8)
   rails-api
   rails_12factor
