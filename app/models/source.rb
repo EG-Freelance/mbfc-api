@@ -13,4 +13,147 @@ class Source < ActiveRecord::Base
 			end
 		end
 	end
+
+	def self.update_sources(date)
+    # define method to extract new info
+    def get_metrics(info_hash, recent)
+      agent = Mechanize.new
+      page = agent.get(info_hash[:mbfc_url])
+      metric_els = page.css('.entry-header').css('img')
+
+      metric_els.each do |me|
+        txt = me.attributes['data-image-title'].text
+        acc = nil
+        bias = nil
+        source = nil
+
+        case
+        when txt["VeryLowFactual"]
+          acc = "very low"
+        when txt["LowFactual"]
+          acc = "low"
+        when txt["MixedFactual"]
+          acc = "mixed"
+        when txt["MostlyFactual"]
+          acc = "mostly factual"
+        when txt["HighFactual"]
+          acc = "high"
+        when txt["VeryHighFactual"]
+          acc = "very high"
+        when txt["extremeright"]
+          bias = "questionable"
+        when txt["extremeleft"]
+          bias = "questionable"
+        when txt.match(/\Aleft/)
+          bias = "left"
+        when txt.match(/\Aright/)
+          bias = "right"
+        when txt["leftcenter"]
+          bias = "left-center"
+        when txt["rightcenter"]
+          bias = "right-center"
+        when txt["leastbiased"]
+          bias = "least biased"
+        when txt["Proscience"]
+          bias = "pro-science"
+        when txt.match(/\Acon/) || txt.match(/\Apseudo/)
+          bias = "conspiracy/pseudoscience"
+        else
+          if !acc
+            acc = "not parsed"
+          elsif !bias
+            bias = "not parsed"
+          end
+          # send notification email?
+          # check credibility lists?
+        end
+
+        acc = "unlisted" if !acc
+        bias = "unlisted" if !bias
+      end
+
+      if recent
+        begin
+          source_el = page.css('p').find { |t| t.text.match(/\ASource: /) && t.css('a') }
+          source = source_el.css('a')[0].attributes['href'].value
+        rescue
+          source = "unlisted"
+        end
+      end
+
+      return acc, bias, source
+    end # get_metrics
+
+		agent = Mechanize.new
+
+    source_hashes = []
+    new_source_hashes = []
+
+    ##### RE-EVALUATIONS ######
+    page = agent.get("https://mediabiasfactcheck.com/re-evaluated-sources")
+    raw_els = page.search('p').select { |p| p.text[/\(\d{1,2}\/\d{1,2}\/\d{4}\)/] }
+    els = raw_els.map { |el| el.children }.flatten
+
+    source_arrays = els.delete_if { |el| el.text == "\n" }.split { |el| el.name == "br" }
+
+    source_arrays.each do |sa|
+      source_hashes << { 
+        :mbfc_url => sa[0].attributes['href'].value, 
+        :name => sa[0].text, 
+        :updated => DateTime.strptime(sa[1].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
+      }
+    end
+    ###########################
+
+    ##### RECENTLY ADDED #####
+    # (uses mechanize page from re-evaluations)
+    raw_els = page.css('.recently')[0].children.to_a
+    els = raw_els.css('li')
+    els.each do |el|
+      src = el.css('a')[0].attributes
+      new_source_hashes << {
+        :mbfc_url => src['href'].value,
+        :name => src['title'].value,
+        :updated => DateTime.strptime(el.css('span')[0].text, "posted on %B %d, %Y")
+      }
+    end
+    ###########################
+
+    ##### CORRECTIONS #####
+    page = agent.get("https://mediabiasfactcheck.com/changes-corrections/")
+    els = page.css('.entry li')
+    els = els.select { |el| el.text.match(/\d{1,2}\/\d{1,2}\/\d{4}/) }
+
+    els.each do |el|
+      source_hashes << {
+        :mbfc_url => el.children.css('a')[0].attributes['href'].value,
+        :name => "zzz",
+        :updated => DateTime.strptime(el.children[0].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
+      }
+    end
+    ########################
+
+    # remove duplicates (by mbfc_url), prioritizing most recent
+    source_hashes = source_hashes.sort { |sh| -sh[:updated].to_i }.uniq { |sh| sh[:mbfc_url] }
+    
+    updates = source_hashes.select { |sh| sh[:updated] >= date }
+    new_entries = new_source_hashes.select { |sh| sh[:updated] >= date }
+
+    updates.each do |update|
+      source = Source.find_by(mbfc_url: update[:mbfc_url])
+      if !source
+        puts "couldn't find source for #{update[:mbfc_url]}"
+        # email?
+        next
+      end
+
+      acc, bias = get_metrics(update, false)
+      source.update(bias: bias, acc: acc, verified: Date.today.strftime("%Y-%m-%d"))
+    end
+
+    new_entries.each do |new_entry|
+      acc, bias, source = get_metrics(new_entry, true)
+      Source.create(name: new_entry[:name].downcase, display_name: new_entry[:name], url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+    end
+	end
 end
