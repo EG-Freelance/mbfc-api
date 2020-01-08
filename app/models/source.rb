@@ -16,74 +16,6 @@ class Source < ActiveRecord::Base
 
 	def self.update_sources(date)
     # define method to extract new info
-    def get_metrics(info_hash, recent)
-      agent = Mechanize.new
-      page = agent.get(info_hash[:mbfc_url])
-      metric_els = page.css('.entry-header').css('img')
-
-      metric_els.each do |me|
-        txt = me.attributes['data-image-title'].text
-        acc = nil
-        bias = nil
-        source = nil
-
-        case
-        when txt["VeryLowFactual"]
-          acc = "very low"
-        when txt["LowFactual"]
-          acc = "low"
-        when txt["MixedFactual"]
-          acc = "mixed"
-        when txt["MostlyFactual"]
-          acc = "mostly factual"
-        when txt["HighFactual"]
-          acc = "high"
-        when txt["VeryHighFactual"]
-          acc = "very high"
-        when txt["extremeright"]
-          bias = "questionable"
-        when txt["extremeleft"]
-          bias = "questionable"
-        when txt.match(/\Aleft/)
-          bias = "left"
-        when txt.match(/\Aright/)
-          bias = "right"
-        when txt["leftcenter"]
-          bias = "left-center"
-        when txt["rightcenter"]
-          bias = "right-center"
-        when txt["leastbiased"]
-          bias = "least biased"
-        when txt["Proscience"]
-          bias = "pro-science"
-        when txt.match(/\Acon/) || txt.match(/\Apseudo/)
-          bias = "conspiracy/pseudoscience"
-        else
-          if !acc
-            acc = "not parsed"
-          elsif !bias
-            bias = "not parsed"
-          end
-          # send notification email?
-          # check credibility lists?
-        end
-
-        acc = "unlisted" if !acc
-        bias = "unlisted" if !bias
-      end
-
-      if recent
-        begin
-          source_el = page.css('p').find { |t| t.text.match(/\ASource: /) && t.css('a') }
-          source = source_el.css('a')[0].attributes['href'].value
-        rescue
-          source = "unlisted"
-        end
-      end
-
-      return acc, bias, source
-    end # get_metrics
-
 		agent = Mechanize.new
 
     source_hashes = []
@@ -107,8 +39,8 @@ class Source < ActiveRecord::Base
 
     ##### RECENTLY ADDED #####
     # (uses mechanize page from re-evaluations)
-    raw_els = page.css('.recently')[0].children.to_a
-    els = raw_els.css('li')
+    raw_els = page.css('.recently')[0].children
+    els = raw_els.css('li').to_a
     els.each do |el|
       src = el.css('a')[0].attributes
       new_source_hashes << {
@@ -140,6 +72,7 @@ class Source < ActiveRecord::Base
     new_entries = new_source_hashes.select { |sh| sh[:updated] >= date }
 
     updates.each do |update|
+      puts "Update #{update[:mbfc_url]}"
       source = Source.find_by(mbfc_url: update[:mbfc_url])
       if !source
         puts "couldn't find source for #{update[:mbfc_url]}"
@@ -147,13 +80,83 @@ class Source < ActiveRecord::Base
         next
       end
 
-      acc, bias = get_metrics(update, false)
-      source.update(bias: bias, acc: acc, verified: Date.today.strftime("%Y-%m-%d"))
+      acc, bias = Source.get_metrics(update, false)
+      source.update(bias: bias, accuracy: acc, verified: Date.today.strftime("%Y-%m-%d"))
     end
 
     new_entries.each do |new_entry|
-      acc, bias, source = get_metrics(new_entry, true)
+      puts "New #{update[:mbfc_url]}"
+      acc, bias, source = Source.get_metrics(new_entry, true)
       Source.create(name: new_entry[:name].downcase, display_name: new_entry[:name], url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
     end
 	end
+
+  def self.get_metrics(info_hash, recent)
+    agent = Mechanize.new
+    page = agent.get(info_hash[:mbfc_url])
+    metric_els = page.css('.entry-header').css('img')
+    acc = nil
+    bias = nil
+    source = nil
+
+    metric_els.each do |me|
+      txt = me.attributes['data-image-title'].text
+
+      case
+      when txt["VeryLowFactual"]
+        acc = "very low"
+      when txt["LowFactual"]
+        acc = "low"
+      when txt["MixedFactual"]
+        acc = "mixed"
+      when txt["MostlyFactual"]
+        acc = "mostly factual"
+      when txt["HighFactual"]
+        acc = "high"
+      when txt["VeryHighFactual"]
+        acc = "very high"
+      when txt["extremeright"]
+        bias = "questionable"
+      when txt["extremeleft"]
+        bias = "questionable"
+      when txt.match(/\Aleft/)
+        bias = "left"
+      when txt.match(/\Aright/)
+        bias = "right"
+      when txt["leftcenter"]
+        bias = "left-center"
+      when txt["rightcenter"]
+        bias = "right-center"
+      when txt["leastbiased"]
+        bias = "least biased"
+      when txt["Proscience"]
+        bias = "pro-science"
+      when txt.match(/\Acon/) || txt.match(/\Apseudo/)
+        bias = "conspiracy/pseudoscience"
+      else
+        if !acc
+          acc = "not parsed"
+        elsif !bias
+          bias = "not parsed"
+        end
+        # send notification email?
+        # check credibility lists?
+      end
+
+      acc = "unlisted" if !acc
+      bias = "unlisted" if !bias
+    end
+
+    if recent
+      begin
+        source_el = page.css('p').find { |t| t.text.match(/\ASource: /) && t.css('a') }
+        source = source_el.css('a')[0].attributes['href'].value
+      rescue
+        source = "unlisted"
+      end
+    end
+
+    puts acc, bias, source
+    return acc, bias, source
+  end
 end
