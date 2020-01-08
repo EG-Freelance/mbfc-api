@@ -1,22 +1,22 @@
 require 'csv'
 
 class Source < ActiveRecord::Base
-	def self.upload_sources(filename, verified_date)
-		CSV.read(filename, :headers => true).each do |row|
-			source = self.find_by(:name => row["Source"].try(:downcase))
-			if source
-				unless self.exists?(:name => row["Source"].try(:downcase), :url => row["MBFC Source Link"].try(:downcase), :bias => row["Bias"].try(:downcase), :accuracy => row["Reporting"].try(:downcase), :mbfc_url => row["MBFC link"].try(:downcase))
-					source.update(:display_name => row["Source"], :url => row["MBFC Source Link"].try(:downcase), :bias => row["Bias"].try(:downcase), :accuracy => row["Reporting"].try(:downcase), :mbfc_url => row["MBFC link"].try(:downcase), :verified => DateTime.strptime(verified_date, "%Y-%m-%d").to_date)
-				end
-			else
-				Source.create(:name => row["Source"].try(:downcase), :display_name => row["Source"], :url => row["MBFC Source Link"].try(:downcase), :bias => row["Bias"].try(:downcase), :accuracy => row["Reporting"].try(:downcase), :mbfc_url => row["MBFC link"].try(:downcase), :verified => DateTime.strptime(verified_date, "%Y-%m-%d").to_date)
-			end
-		end
-	end
+  def self.upload_sources(filename, verified_date)
+    CSV.read(filename, :headers => true).each do |row|
+      source = self.find_by(:name => row["Source"].try(:downcase))
+      if source
+        unless self.exists?(:name => row["Source"].try(:downcase), :url => row["MBFC Source Link"].try(:downcase), :bias => row["Bias"].try(:downcase), :accuracy => row["Reporting"].try(:downcase), :mbfc_url => row["MBFC link"].try(:downcase))
+          source.update(:display_name => row["Source"], :url => row["MBFC Source Link"].try(:downcase), :bias => row["Bias"].try(:downcase), :accuracy => row["Reporting"].try(:downcase), :mbfc_url => row["MBFC link"].try(:downcase), :verified => DateTime.strptime(verified_date, "%Y-%m-%d").to_date)
+        end
+      else
+        Source.create(:name => row["Source"].try(:downcase), :display_name => row["Source"], :url => row["MBFC Source Link"].try(:downcase), :bias => row["Bias"].try(:downcase), :accuracy => row["Reporting"].try(:downcase), :mbfc_url => row["MBFC link"].try(:downcase), :verified => DateTime.strptime(verified_date, "%Y-%m-%d").to_date)
+      end
+    end
+  end
 
-	def self.update_sources(date)
+  def self.update_sources(date)
     # define method to extract new info
-		agent = Mechanize.new
+    agent = Mechanize.new
 
     source_hashes = []
     new_source_hashes = []
@@ -89,7 +89,7 @@ class Source < ActiveRecord::Base
       acc, bias, source = Source.get_metrics(new_entry, true)
       Source.create(name: new_entry[:name].downcase, display_name: new_entry[:name], url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
     end
-	end
+  end
 
   def self.get_metrics(info_hash, recent)
     agent = Mechanize.new
@@ -156,7 +156,6 @@ class Source < ActiveRecord::Base
       end
     end
 
-    puts acc, bias, source
     return acc, bias, source
   end
 end
