@@ -85,7 +85,7 @@ class Source < ActiveRecord::Base
     end
 
     new_entries.each do |new_entry|
-      puts "New #{update[:mbfc_url]}"
+      puts "New #{new_entry[:mbfc_url]}"
       acc, bias, source = Source.get_metrics(new_entry, true)
       Source.create(name: new_entry[:name].downcase, display_name: new_entry[:name], url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
     end
