@@ -17,6 +17,7 @@ class Source < ActiveRecord::Base
   scope :q, -> { where(bias: "questionable") }
   scope :no_bias, -> { where(bias: nil) }
   scope :no_acc, -> { where(accuracy: nil) }
+  scope :no_source, -> { where(url: nil) }
 
   def self.upload_sources(filename, verified_date)
     CSV.read(filename, :headers => true).each do |row|
@@ -166,7 +167,7 @@ class Source < ActiveRecord::Base
 
     if create_new
       begin
-        source_el = page.css('p').find { |t| t.text.match(/\ASource: /) && t.css('a') }
+        source_el = page.css('p').find { |t| t.text.match(/\ASource:/) && t.css('a') }
         source = source_el.css('a')[0].attributes['href'].value
       rescue
         source = "unlisted"
@@ -221,5 +222,10 @@ class Source < ActiveRecord::Base
     end
 
     return new_entries
+  end
+
+  self.get_satires
+    agent = Mechanize.new
+
   end
 end
