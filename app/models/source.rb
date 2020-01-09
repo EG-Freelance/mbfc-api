@@ -224,8 +224,8 @@ class Source < ActiveRecord::Base
     return new_entries
   end
 
-  self.get_satires
-    agent = Mechanize.new
+  # def self.get_satires
+  #   agent = Mechanize.new
 
-  end
+  # end
 end
