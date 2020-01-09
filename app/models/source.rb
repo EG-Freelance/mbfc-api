@@ -227,6 +227,12 @@ class Source < ActiveRecord::Base
         # send notification email?
       end
 
+      # use secondary method to extract accuracy if not already set
+      if !acc
+        el = page.css('p').find { |p| p.text.match(/\AFactual/) }
+        return if !el
+        acc = el.at('span').text.gsub("\n", "").downcase
+      end
       acc = "unlisted" if !acc
       bias = "unlisted" if !bias
     end
