@@ -194,6 +194,7 @@ class Source < ActiveRecord::Base
     agent = Mechanize.new
 
     source_hashes = []
+    new_entries = []
 
     ##### RE-EVALUATIONS ######
     page = agent.get("https://mediabiasfactcheck.com/re-evaluated-sources")
@@ -212,10 +213,9 @@ class Source < ActiveRecord::Base
 
     source_hashes.each do |sh|
       puts "get info for #{sh[:mbfc_url]}"
-      new_entries = []
       source = Source.find_by(mbfc_url: sh[:mbfc_url])
       if !source
-        puts "couldn't find source for #{sh[:mbfc_url]; moving to new_entries }"
+        puts "couldn't find source for #{sh[:mbfc_url]}; moving to new_entries"
         new_entries << sh[:mbfc_url]
       end
     end
