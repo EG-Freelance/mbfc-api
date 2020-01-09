@@ -239,7 +239,7 @@ class Source < ActiveRecord::Base
       if !acc
         el = page.css('p').find { |p| p.text.match(/\AFactual/) }
         if el
-          acc = el.css('span').find { |c| c.text.match(/high|low|mixed|mostly/i) }
+          acc = el.css('span').find { |c| c.text.match(/high|low|mixed|mostly/i) }.text.downcase.strip
         end
       end
       acc = "unlisted" if !acc
