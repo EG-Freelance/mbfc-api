@@ -208,14 +208,14 @@ class Source < ActiveRecord::Base
         bias = "questionable"
       when txt["extremeleft"]
         bias = "questionable"
+      when txt["leftcenter"] # order matters for leftcenter/left and rightcenter/right
+        bias = "left-center"
+      when txt["rightcenter"]
+        bias = "right-center"
       when txt.match(/\Aleft/)
         bias = "left"
       when txt.match(/\Aright/)
         bias = "right"
-      when txt["leftcenter"]
-        bias = "left-center"
-      when txt["rightcenter"]
-        bias = "right-center"
       when txt["leastbiased"]
         bias = "least biased"
       when txt["Proscience"]
