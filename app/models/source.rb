@@ -15,9 +15,11 @@ class Source < ActiveRecord::Base
   scope :ps, -> { where(bias: "pro-science") }
   scope :consp, -> { where(bias: "conspiracy/pseudoscience") }
   scope :q, -> { where(bias: "questionable") }
-  scope :no_bias, -> { where(bias: nil) }
-  scope :no_acc, -> { where(accuracy: nil) }
-  scope :no_source, -> { where(url: nil) }
+  scope :no_bias, -> { where(bias: 'unlisted') }
+  scope :no_acc, -> { where(accuracy: 'unlisted') }
+  scope :no_source, -> { where(url: 'unlisted') }
+  scope :bad_acc, -> { where(accuracy: 'not parsed') }
+  scope :bad_bias, -> { where(bias: 'not parsed') }
 
   def self.upload_sources(filename, verified_date)
     CSV.read(filename, :headers => true).each do |row|
