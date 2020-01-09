@@ -124,16 +124,16 @@ class Source < ActiveRecord::Base
     end
   end
 
-  def self.get_new_entries(mbfc_links)
+  def self.update_or_create_entries(mbfc_links)
     agent = Mechanize.new
 
     mbfc_links.each do |link|
       puts "Getting info for #{link}"
       page = agent.get(link)
-      new_entry = { :mbfc_url => link, :updated => Date.today } # updated in this instance just says when we acquired the data
-      acc, bias, source, s_name = Source.get_metrics(new_entry, true)
+      entry = { :mbfc_url => link, :updated => Date.today } # updated in this instance just says when we acquired the data
+      acc, bias, source, s_name = Source.get_metrics(entry, true)
 
-      Source.create(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+      Source.where(mbfc_url: entry[:mbfc_url]).first_or_create.update(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, verified: Date.today.strftime("%Y-%d-%m"))
     end  
   end
 
