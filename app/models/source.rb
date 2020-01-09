@@ -34,10 +34,11 @@ class Source < ActiveRecord::Base
     end
   end
 
-  def self.get_satires
+  def self.get_sources(type)
+    # for type, use the URL param (i.e. mediabiasfactcheck.com/#{type}/)
     agent = Mechanize.new
 
-    page = agent.get("https://mediabiasfactcheck.com/satire/")
+    page = agent.get("https://mediabiasfactcheck.com/#{type}/")
     entries = page.at('#mbfc-table').css('td a')
     entries.each do |entry|
       mbfc_url = entry.attributes['href'].value
@@ -45,7 +46,6 @@ class Source < ActiveRecord::Base
       Source.where(mbfc_url: mbfc_url).first_or_create.update(accuracy: acc, bias: bias, url: source, name: s_name.downcase, display_name: s_name, verified: Date.today)
     end
   end
-
 
   def self.update_sources(date)
     # define method to extract new info
