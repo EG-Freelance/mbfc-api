@@ -37,12 +37,19 @@ class Source < ActiveRecord::Base
   def self.get_sources(type)
     # for type, use the URL param (i.e. mediabiasfactcheck.com/#{type}/)
     agent = Mechanize.new
+    failures = []
 
     page = agent.get("https://mediabiasfactcheck.com/#{type}/")
     entries = page.at('#mbfc-table').css('td a')
     entries.each do |entry|
       mbfc_url = entry.attributes['href'].value
-      acc, bias, source, s_name = Source.get_metrics({ :mbfc_url => mbfc_url }, true)
+      begin
+        acc, bias, source, s_name = Source.get_metrics({ :mbfc_url => mbfc_url }, true)
+      rescue
+        puts "MBFC link inactive or data are malformed -- #{mbfc_url}"
+        failures << mbfc_url
+        next
+      end
       Source.where(mbfc_url: mbfc_url).first_or_create.update(accuracy: acc, bias: bias, url: source, name: s_name.downcase, display_name: s_name, verified: Date.today)
     end
   end
