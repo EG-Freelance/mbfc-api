@@ -258,12 +258,20 @@ class Source < ActiveRecord::Base
       # try to get .entry-title first, then .entry-header h1
       el = page.at('.entry-title')
       if !el
-        el = page.at('.entry-header h1')
+        el = page.css('h1').find { |c| c.text.match(/\A[A-Z\s\-]*\z/) }
       end
-
-      if el.text.match(/questionable/i)
-        bias = "questionable"
-      end
+      if el
+        case
+        when el.text.match(/questionable/i)
+          bias = "questionable"
+        when el.text.match(/least biased/i)
+          bias = "least biased"
+        when el.text.match(/mixed/i)
+          bias = "mixed"
+        else
+          bias = "not parsed"
+        end
+      
     end
     acc = "unlisted" if !acc
     bias = "unlisted" if !bias
