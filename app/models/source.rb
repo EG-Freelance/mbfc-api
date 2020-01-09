@@ -258,10 +258,10 @@ class Source < ActiveRecord::Base
       # try to get .entry-title first, then .entry-header h1
       el = page.at('.entry-title')
       if !el
-        el = page.css('h1').find { |c| c.text.match(/\A[A-Z\s\-]*\z/) }
+        el = page.css('h1').find { |c| c.text.match(/\A[A-Z\s\-]{5,100}\z/) }
       end
       if !el
-        el = page.css('h2').find { |c| c.text.match(/\A[A-Z\s\-]*\z/) }
+        el = page.css('h2').find { |c| c.text.match(/\A[A-Z\s\-]{5,100}\z/) }
       end
       if el
         case
