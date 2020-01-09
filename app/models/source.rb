@@ -38,7 +38,7 @@ class Source < ActiveRecord::Base
     agent = Mechanize.new
 
     page = agent.get("https://mediabiasfactcheck.com/satire/")
-    entries = page.at('#mbfc_table').css('td a')
+    entries = page.at('#mbfc-table').css('td a')
     entries.each do |entry|
       mbfc_url = entry.attributes['href'].value
       acc, bias, source, s_name = Source.get_metrics({ :mbfc_url => mbfc_url }, true)
