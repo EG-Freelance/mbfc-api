@@ -175,7 +175,7 @@ class Source < ActiveRecord::Base
   def self.get_metrics(info_hash, create_new)
     agent = Mechanize.new
     page = agent.get(info_hash[:mbfc_url])
-    metric_els = page.css('.entry-header').css('img')
+    metric_els = page.css('img').select { |i| !i.attributes['data-attachment-id'].nil? }
     acc = nil
     bias = nil
     source = nil
@@ -230,8 +230,9 @@ class Source < ActiveRecord::Base
       # use secondary method to extract accuracy if not already set
       if !acc
         el = page.css('p').find { |p| p.text.match(/\AFactual/) }
-        return if !el
-        acc = el.at('span').text.gsub("\n", "").downcase
+        if el
+          acc = el.at('span').text.gsub("\n", "").downcase
+        end
       end
       acc = "unlisted" if !acc
       bias = "unlisted" if !bias
