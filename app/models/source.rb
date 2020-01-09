@@ -20,6 +20,7 @@ class Source < ActiveRecord::Base
   scope :no_source, -> { where(url: 'unlisted') }
   scope :bad_acc, -> { where(accuracy: 'not parsed') }
   scope :bad_bias, -> { where(bias: 'not parsed') }
+  scope :bad_parse, -> { where(accuracy: 'bad parse') }
 
   def self.upload_sources(filename, verified_date)
     CSV.read(filename, :headers => true).each do |row|
@@ -239,7 +240,7 @@ class Source < ActiveRecord::Base
       if !acc
         el = page.css('p').find { |p| p.text.match(/\AFactual/) }
         if el
-          acc = el.css('span').find { |c| c.text.match(/high|low|mixed|mostly/i) }.text.gsub(/\p{Space}/," ").gsub("-", " ").downcase.strip
+          acc = el.children.find { |c| c.text.match(/high|low|mixed|mostly/i) }.text.gsub(/\p{Space}/," ").gsub("-", " ").downcase.strip
           if !["very high", "high", "mostly factual", "mixed", "low", "very low", "unlisted", "satire"].include?(acc)
             acc = "bad parse"
           end
