@@ -34,6 +34,19 @@ class Source < ActiveRecord::Base
     end
   end
 
+  def self.get_satires
+    agent = Mechanize.new
+
+    page = agent.get("https://mediabiasfactcheck.com/satire/")
+    entries = page.at('#mbfc_table').css('td a')
+    entries.each do |entry|
+      mbfc_url = entry.attributes['href'].value
+      acc, bias, source, s_name = Source.get_metrics({ :mbfc_url => mbfc_url }, true)
+      Source.where(mbfc_url: mbfc_url).first_or_create.update(accuracy: acc, bias: bias, url: source, name: s_name.downcase, display_name: s_name, verified: Date.today)
+    end
+  end
+
+
   def self.update_sources(date)
     # define method to extract new info
     agent = Mechanize.new
@@ -111,74 +124,6 @@ class Source < ActiveRecord::Base
     end
   end
 
-  def self.get_metrics(info_hash, create_new)
-    agent = Mechanize.new
-    page = agent.get(info_hash[:mbfc_url])
-    metric_els = page.css('.entry-header').css('img')
-    acc = nil
-    bias = nil
-    source = nil
-    s_name = page.at('.page-title').text
-
-    metric_els.each do |me|
-      txt = me.attributes['data-image-title'].text
-
-      case
-      when txt["VeryLowFactual"]
-        acc = "very low"
-      when txt["LowFactual"]
-        acc = "low"
-      when txt["MixedFactual"]
-        acc = "mixed"
-      when txt["MostlyFactual"]
-        acc = "mostly factual"
-      when txt["HighFactual"]
-        acc = "high"
-      when txt["VeryHighFactual"]
-        acc = "very high"
-      when txt["extremeright"]
-        bias = "questionable"
-      when txt["extremeleft"]
-        bias = "questionable"
-      when txt.match(/\Aleft/)
-        bias = "left"
-      when txt.match(/\Aright/)
-        bias = "right"
-      when txt["leftcenter"]
-        bias = "left-center"
-      when txt["rightcenter"]
-        bias = "right-center"
-      when txt["leastbiased"]
-        bias = "least biased"
-      when txt["Proscience"]
-        bias = "pro-science"
-      when txt.match(/\Acon/) || txt.match(/\Apseudo/)
-        bias = "conspiracy/pseudoscience"
-      else
-        if !acc
-          acc = "not parsed"
-        elsif !bias
-          bias = "not parsed"
-        end
-        # send notification email?
-      end
-
-      acc = "unlisted" if !acc
-      bias = "unlisted" if !bias
-    end
-
-    if create_new
-      begin
-        source_el = page.css('p').find { |t| t.text.match(/\ASource:/) && t.css('a') }
-        source = source_el.css('a')[0].attributes['href'].value
-      rescue
-        source = "unlisted"
-      end
-    end
-
-    return acc, bias, source, s_name
-  end
-
   def self.get_new_entries(mbfc_links)
     agent = Mechanize.new
 
@@ -226,8 +171,77 @@ class Source < ActiveRecord::Base
     return new_entries
   end
 
-  # def self.get_satires
-  #   agent = Mechanize.new
+  ##### HELPER METHODS #####
+  def self.get_metrics(info_hash, create_new)
+    agent = Mechanize.new
+    page = agent.get(info_hash[:mbfc_url])
+    metric_els = page.css('.entry-header').css('img')
+    acc = nil
+    bias = nil
+    source = nil
+    s_name = page.at('.page-title').text
 
-  # end
+    metric_els.each do |me|
+      txt = me.attributes['data-image-title'].text
+
+      case
+      when txt["VeryLowFactual"]
+        acc = "very low"
+      when txt["LowFactual"]
+        acc = "low"
+      when txt["MixedFactual"]
+        acc = "mixed"
+      when txt["MostlyFactual"]
+        acc = "mostly factual"
+      when txt["HighFactual"]
+        acc = "high"
+      when txt["VeryHighFactual"]
+        acc = "very high"
+      when txt["extremeright"]
+        bias = "questionable"
+      when txt["extremeleft"]
+        bias = "questionable"
+      when txt.match(/\Aleft/)
+        bias = "left"
+      when txt.match(/\Aright/)
+        bias = "right"
+      when txt["leftcenter"]
+        bias = "left-center"
+      when txt["rightcenter"]
+        bias = "right-center"
+      when txt["leastbiased"]
+        bias = "least biased"
+      when txt["Proscience"]
+        bias = "pro-science"
+      when txt.match(/\Acon/) || txt.match(/\Apseudo/)
+        bias = "conspiracy/pseudoscience"
+      when txt["satirelabel"]
+        bias = "satire"
+        acc = "satire"
+      else
+        if !acc
+          acc = "not parsed"
+        elsif !bias
+          bias = "not parsed"
+        end
+        # send notification email?
+      end
+
+      acc = "unlisted" if !acc
+      bias = "unlisted" if !bias
+    end
+
+    if create_new
+      begin
+        source_el = page.css('p').find { |t| t.text.match(/\ASource:/) && t.css('a') }
+        source = source_el.css('a')[0].attributes['href'].value
+      rescue
+        source = "unlisted"
+      end
+    end
+
+    return acc, bias, source, s_name
+  end
+  ##########################
+
 end
