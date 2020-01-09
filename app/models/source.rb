@@ -260,6 +260,9 @@ class Source < ActiveRecord::Base
       if !el
         el = page.css('h1').find { |c| c.text.match(/\A[A-Z\s\-]*\z/) }
       end
+      if !el
+        el = page.css('h2').find { |c| c.text.match(/\A[A-Z\s\-]*\z/) }
+      end
       if el
         case
         when el.text.match(/questionable/i)
