@@ -240,7 +240,12 @@ class Source < ActiveRecord::Base
       if !acc
         el = page.css('p').find { |p| p.text.match(/\AFactual/) }
         if el
-          acc = el.children.find { |c| c.text.match(/high|low|mixed|mostly/i) }.text.gsub(/\p{Space}/," ").gsub("-", " ").downcase.strip
+          # recursively dig to get base level node matching expectation
+          while el.children.count > 0
+            el = el.children.find { |c| c.text.match(/high|low|mixed|mostly/i) }
+          end
+
+          acc = el.text.gsub(/\p{Space}/," ").gsub("-", " ").downcase.strip
           if !["very high", "high", "mostly factual", "mixed", "low", "very low", "unlisted", "satire"].include?(acc)
             acc = "bad parse"
           end
