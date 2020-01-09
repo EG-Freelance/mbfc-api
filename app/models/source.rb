@@ -239,7 +239,10 @@ class Source < ActiveRecord::Base
       if !acc
         el = page.css('p').find { |p| p.text.match(/\AFactual/) }
         if el
-          acc = el.css('span').find { |c| c.text.match(/high|low|mixed|mostly/i) }.text.downcase.strip
+          acc = el.css('span').find { |c| c.text.match(/high|low|mixed|mostly/i) }.text.gsub(/\p{Space}/," ").gsub("-", " ").downcase.strip
+          if !["very high", "high", "mostly factual", "mixed", "low", "very low", "unlisted", "satire"].include?(acc)
+            acc = "bad parse"
+          end
         end
       end
       acc = "unlisted" if !acc
