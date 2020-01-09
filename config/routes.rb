@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   root :to => redirect('/api/v1/sources')
 
   get '/api/v1/sources' => "application#get_data"
+  get '/api/v1/plugin-data' => "application#get_data_for_plugin"
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
