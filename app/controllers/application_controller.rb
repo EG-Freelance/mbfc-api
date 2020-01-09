@@ -9,7 +9,7 @@ class ApplicationController < ActionController::API
     sources = Source.all.sort_by(&:name)
     sources_hash = {}
     sources.each do |source|
-      key = source.url.match(/(?:https?\:\/\/)?(?:www\.)?([A-Za-z\.\-]*)\/?/)[1]
+      key = source.url.match(/(?:https?\:\/\/)?(?:www\.)?([A-Za-z0-9\.\-]*)\/?/)[1]
       sources_hash[key] = { 'bias' => source.bias, 'accuracy' => source.accuracy, 'href' => source.mbfc_url }
     end
     render :json => sources_hash
