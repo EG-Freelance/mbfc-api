@@ -52,6 +52,7 @@ class Source < ActiveRecord::Base
       end
       Source.where(mbfc_url: mbfc_url).first_or_create.update(accuracy: acc, bias: bias, url: source, name: s_name.downcase, display_name: s_name, verified: Date.today)
     end
+    puts failures
   end
 
   def self.update_sources(date)
@@ -261,4 +262,5 @@ class Source < ActiveRecord::Base
   #### NOTES: ####
   # sources listed improperly or differently:  https://genesiustimes.com, https://www.cracked.com, http://viralactions.com, http://www.the-postillion.com
   # Borowitz Report is a subsection of The New Yorker, so can't list the same way as others (otherwise, plugins will list The New Yorker as satire)
+  # types = ["left", "leftcenter", "center", "right-center", "right", "pro-science"]
 end
