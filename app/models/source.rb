@@ -271,7 +271,7 @@ class Source < ActiveRecord::Base
         else
           bias = "not parsed"
         end
-      
+      end      
     end
     acc = "unlisted" if !acc
     bias = "unlisted" if !bias
