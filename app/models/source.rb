@@ -1,6 +1,23 @@
 require 'csv'
 
 class Source < ActiveRecord::Base
+  scope :vhf, -> { where(accuracy: "very high") }
+  scope :hf, -> { where(accuracy: "high") }
+  scope :mostf, -> { where(accuracy: "mostly factual") }
+  scope :mixedf, -> { where(accuracy: "mixed") }
+  scope :lowf, -> { where(accuracy: "low") }
+  scope :vlf, -> { where(accuracy: "very low") }
+  scope :rb, -> { where(bias: "right") }
+  scope :rcb, -> { where(bias: "right-center") }
+  scope :leastb, -> { where(bias: "least biased") }
+  scope :lcb, -> { where(bias: "left-center") }
+  scope :lb, -> { where(bias: "left") }
+  scope :ps, -> { where(bias: "pro-science") }
+  scope :consp, -> { where(bias: "conspiracy/pseudoscience") }
+  scope :q, -> { where(bias: "questionable") }
+  scope :no_bias, -> { where(bias: nil) }
+  scope :no_acc, -> { where(accuracy: nil) }
+
   def self.upload_sources(filename, verified_date)
     CSV.read(filename, :headers => true).each do |row|
       source = self.find_by(:name => row["Source"].try(:downcase))
@@ -20,6 +37,7 @@ class Source < ActiveRecord::Base
 
     source_hashes = []
     new_source_hashes = []
+
 
     ##### RE-EVALUATIONS ######
     page = agent.get("https://mediabiasfactcheck.com/re-evaluated-sources")
@@ -59,7 +77,6 @@ class Source < ActiveRecord::Base
     els.each do |el|
       source_hashes << {
         :mbfc_url => el.children.css('a')[0].attributes['href'].value,
-        :name => "zzz",
         :updated => DateTime.strptime(el.children[0].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
       }
     end
@@ -75,8 +92,8 @@ class Source < ActiveRecord::Base
       puts "Update #{update[:mbfc_url]}"
       source = Source.find_by(mbfc_url: update[:mbfc_url])
       if !source
-        puts "couldn't find source for #{update[:mbfc_url]}"
-        # email?
+        puts "couldn't find source for #{update[:mbfc_url]; moving to new_entries }"
+        new_entries << update
         next
       end
 
@@ -86,18 +103,19 @@ class Source < ActiveRecord::Base
 
     new_entries.each do |new_entry|
       puts "New #{new_entry[:mbfc_url]}"
-      acc, bias, source = Source.get_metrics(new_entry, true)
-      Source.create(name: new_entry[:name].downcase, display_name: new_entry[:name], url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+      acc, bias, source, s_name = Source.get_metrics(new_entry, true)
+      Source.create(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
     end
   end
 
-  def self.get_metrics(info_hash, recent)
+  def self.get_metrics(info_hash, create_new)
     agent = Mechanize.new
     page = agent.get(info_hash[:mbfc_url])
     metric_els = page.css('.entry-header').css('img')
     acc = nil
     bias = nil
     source = nil
+    s_name = page.at('.page-title').text
 
     metric_els.each do |me|
       txt = me.attributes['data-image-title'].text
@@ -140,14 +158,13 @@ class Source < ActiveRecord::Base
           bias = "not parsed"
         end
         # send notification email?
-        # check credibility lists?
       end
 
       acc = "unlisted" if !acc
       bias = "unlisted" if !bias
     end
 
-    if recent
+    if create_new
       begin
         source_el = page.css('p').find { |t| t.text.match(/\ASource: /) && t.css('a') }
         source = source_el.css('a')[0].attributes['href'].value
@@ -156,6 +173,53 @@ class Source < ActiveRecord::Base
       end
     end
 
-    return acc, bias, source
+    return acc, bias, source, s_name
+  end
+
+  def self.get_new_entries(mbfc_links)
+    agent = Mechanize.new
+
+    mbfc_links.each do |link|
+      puts "Getting info for #{link}"
+      page = agent.get(link)
+      new_entry = { :mbfc_url => link, :updated => Date.today } # updated in this instance just says when we acquired the data
+      acc, bias, source, s_name = Source.get_metrics(new_entry, true)
+
+      Source.create(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+    end  
+  end
+
+  def self.collect_missing
+    # collect missing entries from re-evaluations (shouldn't need to be run often)
+    agent = Mechanize.new
+
+    source_hashes = []
+
+    ##### RE-EVALUATIONS ######
+    page = agent.get("https://mediabiasfactcheck.com/re-evaluated-sources")
+    raw_els = page.search('p').select { |p| p.text[/\(\d{1,2}\/\d{1,2}\/\d{4}\)/] }
+    els = raw_els.map { |el| el.children }.flatten
+
+    source_arrays = els.delete_if { |el| el.text == "\n" }.split { |el| el.name == "br" }
+
+    source_arrays.each do |sa|
+      source_hashes << { 
+        :mbfc_url => sa[0].attributes['href'].value, 
+        :name => sa[0].text, 
+        :updated => DateTime.strptime(sa[1].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
+      }
+    end
+
+    source_hashes.each do |sh|
+      puts "get info for #{sh[:mbfc_url]}"
+      new_entries = []
+      source = Source.find_by(mbfc_url: update[:mbfc_url])
+      if !source
+        puts "couldn't find source for #{update[:mbfc_url]; moving to new_entries }"
+        new_entries << update[:mbfc_url]
+      end
+    end
+
+    return new_entries
   end
 end
