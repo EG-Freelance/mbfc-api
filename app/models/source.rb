@@ -235,25 +235,38 @@ class Source < ActiveRecord::Base
         end
         # send notification email?
       end
+    end
 
-      # use secondary method to extract accuracy if not already set
-      if !acc
-        el = page.css('p').find { |p| p.text.match(/\AFactual/) }
-        if el
-          # recursively dig to get base level node matching expectation
-          while el.children.count > 0
-            el = el.children.find { |c| c.text.match(/high|low|mixed|mostly/i) }
-          end
+    # use secondary method to extract accuracy if not already set
+    if !acc
+      el = page.css('p').find { |p| p.text.match(/\AFactual/) }
+      if el
+        # recursively dig to get base level node matching expectation
+        while el.children.count > 0
+          el = el.children.find { |c| c.text.match(/high|low|mixed|mostly/i) }
+        end
 
-          acc = el.text.gsub(/\p{Space}/," ").gsub("-", " ").downcase.strip
-          if !["very high", "high", "mostly factual", "mixed", "low", "very low", "unlisted", "satire"].include?(acc)
-            acc = "bad parse"
-          end
+        acc = el.text.gsub(/\p{Space}/," ").gsub("-", " ").downcase.strip
+        if !["very high", "high", "mostly factual", "mixed", "low", "very low", "unlisted", "satire"].include?(acc)
+          acc = "bad parse"
         end
       end
-      acc = "unlisted" if !acc
-      bias = "unlisted" if !bias
     end
+
+    # use secondary method to extract bias if not already set
+    if !bias
+      # try to get .entry-title first, then .entry-header h1
+      el = page.at('.entry-title')
+      if !el
+        el = page.at('.entry-header h1')
+      end
+
+      if el.text.match(/questionable/i)
+        bias = "questionable"
+      end
+    end
+    acc = "unlisted" if !acc
+    bias = "unlisted" if !bias
 
     if create_new
       begin
