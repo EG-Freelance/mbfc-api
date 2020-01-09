@@ -213,10 +213,10 @@ class Source < ActiveRecord::Base
     source_hashes.each do |sh|
       puts "get info for #{sh[:mbfc_url]}"
       new_entries = []
-      source = Source.find_by(mbfc_url: update[:mbfc_url])
+      source = Source.find_by(mbfc_url: sh[:mbfc_url])
       if !source
-        puts "couldn't find source for #{update[:mbfc_url]; moving to new_entries }"
-        new_entries << update[:mbfc_url]
+        puts "couldn't find source for #{sh[:mbfc_url]; moving to new_entries }"
+        new_entries << sh[:mbfc_url]
       end
     end
 
