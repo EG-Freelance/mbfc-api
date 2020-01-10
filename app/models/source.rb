@@ -281,14 +281,20 @@ class Source < ActiveRecord::Base
 
     if create_new
       begin
-        source_el = page.css('a').find { |t| t.text.strip.gsub(/\p{Space}/,"") == t.try(:attributes).try(:[], 'href').try(:value) }
-        if !source_el
-          source_el = page.css('p').find { |t| t.text.match(/\ASources?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
+        source_el_1 = page.css('a').find { |t| t.text.strip.gsub(/\p{Space}/,"") == t.try(:attributes).try(:[], 'href').try(:value) }
+        if !source_el_1
+          source_el_2 = page.css('p').find { |t| t.text.match(/\ASources?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
         end
-        if !source_el
-          source_el = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
+        if !source_el_2
+          source_el_2 = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
         end
-        source = source_el.at('a').attributes['href'].value
+        if source_el_1
+          source = source_el.attributes['href'].value
+        elsif source_el_2
+          source = source_el.at('a').attributes['href'].value
+        else
+          source = "unlisted"
+        end
       rescue
         source = "unlisted"
       end
