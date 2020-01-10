@@ -281,15 +281,12 @@ class Source < ActiveRecord::Base
 
     if create_new
       begin
-        source_el = page.css('p').find { |t| t.text.match(/\ASources?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
+        source_el = page.css('a').find { |t| t.text.strip.gsub(/\p{Space}/,"") == t.try(:attributes).try(:[], 'href').try(:value) }
         if !source_el
-          source_el = page.css('p').find { |t| t.text.match(/\ASources?:/) && t.css('a') }
+          source_el = page.css('p').find { |t| t.text.match(/\ASources?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
         end
         if !source_el
           source_el = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
-        end
-        if !source_el
-          source_el = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') }
         end
         source = source_el.at('a').attributes['href'].value
       rescue
