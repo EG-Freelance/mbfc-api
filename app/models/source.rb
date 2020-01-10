@@ -285,6 +285,11 @@ class Source < ActiveRecord::Base
         if !source_el
           source_el = page.css('p').find { |t| t.text.match(/\ASources?:/) && t.css('a') }
         end
+        if !source_el
+          source_el = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
+        if !source_el
+          source_el = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') }
+        end
         source = source_el.at('a').attributes['href'].value
       rescue
         source = "unlisted"
