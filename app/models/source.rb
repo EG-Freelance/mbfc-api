@@ -287,6 +287,7 @@ class Source < ActiveRecord::Base
         end
         if !source_el
           source_el = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
+        end
         if !source_el
           source_el = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') }
         end
