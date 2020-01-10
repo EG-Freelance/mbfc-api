@@ -289,9 +289,9 @@ class Source < ActiveRecord::Base
           source_el_2 = page.css('p').find { |t| t.text.match(/\ANotes?:/) && t.css('a') && !t.children[1].try(:attributes).try(:[], 'href').nil? }
         end
         if source_el_1
-          source = source_el.attributes['href'].value
+          source = source_el_1.attributes['href'].value
         elsif source_el_2
-          source = source_el.at('a').attributes['href'].value
+          source = source_el_2.at('a').attributes['href'].value
         else
           source = "unlisted"
         end
