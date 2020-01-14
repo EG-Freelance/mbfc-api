@@ -308,4 +308,5 @@ class Source < ActiveRecord::Base
   # sources listed improperly or differently:  https://genesiustimes.com, https://www.cracked.com, http://viralactions.com, http://www.the-postillion.com
   # Borowitz Report is a subsection of The New Yorker, so can't list the same way as others (otherwise, plugins will list The New Yorker as satire)
   # types = ["left", "leftcenter", "center", "right-center", "right", "pro-science"]
+  # duplicate bbc to include bbc.co.uk url as well as .com
 end
