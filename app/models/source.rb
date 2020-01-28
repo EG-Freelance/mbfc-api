@@ -72,10 +72,13 @@ class Source < ActiveRecord::Base
     source_arrays = els.delete_if { |el| el.text == "\n" }.split { |el| el.name == "br" }
 
     source_arrays.each do |sa|
+      txt_raw = sa.map(&:text).join("").partition(/\(\d{1,2}\/\d{1,2}\/\d{4}\)/)
       source_hashes << { 
         :mbfc_url => sa[0].attributes['href'].value, 
-        :name => sa[0].text, 
-        :updated => DateTime.strptime(sa[1].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
+        # :name => sa[0].text, 
+        # :updated => DateTime.strptime(sa[1].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
+        :name => txt_raw[0].strip,
+        :updated => DateTime.strptime(txt_raw[1].match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
       }
     end
     ###########################
