@@ -120,7 +120,7 @@ class Source < ActiveRecord::Base
       puts "Update #{update[:mbfc_url]}"
       source = Source.find_by(mbfc_url: update[:mbfc_url])
       if !source
-        puts "couldn't find source for #{update[:mbfc_url]; moving to new_entries }"
+        puts "couldn't find source for #{update[:mbfc_url]}; moving to new_entries"
         new_entries << update
         next
       end
@@ -132,7 +132,10 @@ class Source < ActiveRecord::Base
     new_entries.each do |new_entry|
       puts "New #{new_entry[:mbfc_url]}"
       acc, bias, source, s_name = Source.get_metrics(new_entry, true)
-      Source.create(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+      unless acc == "unlisted" && bias == "unlisted" && source == "unlisted"
+        # If the listing doesn't point anywhere real, don't do anything with it
+        Source.create(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+      end
     end
   end
 
