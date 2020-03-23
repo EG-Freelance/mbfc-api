@@ -194,18 +194,18 @@ class Source < ActiveRecord::Base
       txt = me.attributes['data-image-title'].text
 
       case
-      when txt["VeryLowFactual"]
+      when txt["VeryLow"]
         acc = "very low"
-      when txt["LowFactual"]
+      when txt["Low"]
         acc = "low"
-      when txt["MixedFactual"]
+      when txt["Mixed"]
         acc = "mixed"
       when txt["MostlyFactual"]
         acc = "mostly factual"
-      when txt["HighFactual"]
-        acc = "high"
-      when txt["VeryHighFactual"]
+      when txt["VeryHigh"]
         acc = "very high"
+      when txt["High"]
+        acc = "high"
       when txt["extremeright"]
         bias = "questionable"
       when txt["extremeleft"]
@@ -308,4 +308,5 @@ class Source < ActiveRecord::Base
   # sources listed improperly or differently:  https://genesiustimes.com, https://www.cracked.com, http://viralactions.com, http://www.the-postillion.com
   # Borowitz Report is a subsection of The New Yorker, so can't list the same way as others (otherwise, plugins will list The New Yorker as satire)
   # types = ["left", "leftcenter", "center", "right-center", "right", "pro-science"]
+  # entries to hand-edit source urls:  CNN, Yahoo, Monmouth
 end
