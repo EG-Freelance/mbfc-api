@@ -200,37 +200,37 @@ class Source < ActiveRecord::Base
       txt = me.attributes['data-image-title'].text
 
       case
-      when txt["VeryLow"]
+      when txt.match(/VeryLow/i)
         acc = "very low"
-      when txt["Low"]
+      when txt.match(/Low/i)
         acc = "low"
-      when txt["Mixed"]
+      when txt.match(/Mixed/i)
         acc = "mixed"
-      when txt["MostlyFactual"]
+      when txt.match(/MostlyFactual/i)
         acc = "mostly factual"
-      when txt["VeryHigh"]
+      when txt.match(/VeryHigh/i)
         acc = "very high"
-      when txt["High"]
+      when txt.match(/High/i)
         acc = "high"
-      when txt["extremeright"]
+      when txt.match(/extremeright/i)
         bias = "questionable"
-      when txt["extremeleft"]
+      when txt.match(/extremeleft/i)
         bias = "questionable"
-      when txt["leftcenter"] # order matters for leftcenter/left and rightcenter/right
+      when txt.match(/leftcenter/i) # order matters for leftcenter/left and rightcenter/right
         bias = "left-center"
-      when txt["rightcenter"]
+      when txt.match(/rightcenter/i)
         bias = "right-center"
-      when txt.match(/\Aleft/)
+      when txt.match(/\Aleft/i)
         bias = "left"
-      when txt.match(/\Aright/)
+      when txt.match(/\Aright/i)
         bias = "right"
-      when txt["leastbiased"]
+      when txt.match(/leastbiased/i)
         bias = "least biased"
-      when txt["Proscience"]
+      when txt.match(/Proscience/i)
         bias = "pro-science"
       when txt.match(/\Acon/) || txt.match(/\Apseudo/)
         bias = "conspiracy/pseudoscience"
-      when txt["satirelabel"]
+      when txt.match(/satirelabel/i)
         bias = "satire"
         acc = "satire"
       else
