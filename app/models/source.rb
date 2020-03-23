@@ -72,10 +72,13 @@ class Source < ActiveRecord::Base
     source_arrays = els.delete_if { |el| el.text == "\n" }.split { |el| el.name == "br" }
 
     source_arrays.each do |sa|
+      txt_raw = sa.map(&:text).join("").partition(/\(\d{1,2}\/\d{1,2}\/\d{4}\)/)
       source_hashes << { 
         :mbfc_url => sa[0].attributes['href'].value, 
-        :name => sa[0].text, 
-        :updated => DateTime.strptime(sa[1].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
+        # :name => sa[0].text, 
+        # :updated => DateTime.strptime(sa[1].text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
+        :name => txt_raw[0].strip,
+        :updated => DateTime.strptime(txt_raw[1].match(/(\d{1,2}\/\d{1,2}\/\d{4})/)[1], "%m/%d/%Y")
       }
     end
     ###########################
@@ -117,7 +120,7 @@ class Source < ActiveRecord::Base
       puts "Update #{update[:mbfc_url]}"
       source = Source.find_by(mbfc_url: update[:mbfc_url])
       if !source
-        puts "couldn't find source for #{update[:mbfc_url]; moving to new_entries }"
+        puts "couldn't find source for #{update[:mbfc_url]}; moving to new_entries"
         new_entries << update
         next
       end
@@ -129,7 +132,10 @@ class Source < ActiveRecord::Base
     new_entries.each do |new_entry|
       puts "New #{new_entry[:mbfc_url]}"
       acc, bias, source, s_name = Source.get_metrics(new_entry, true)
-      Source.create(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+      unless acc == "unlisted" && bias == "unlisted" && source == "unlisted"
+        # If the listing doesn't point anywhere real, don't do anything with it
+        Source.create(name: s_name.downcase, display_name: s_name, url: source, bias: bias, accuracy: acc, mbfc_url: new_entry[:mbfc_url], verified: Date.today.strftime("%Y-%d-%m"))
+      end
     end
   end
 
@@ -309,4 +315,5 @@ class Source < ActiveRecord::Base
   # Borowitz Report is a subsection of The New Yorker, so can't list the same way as others (otherwise, plugins will list The New Yorker as satire)
   # types = ["left", "leftcenter", "center", "right-center", "right", "pro-science"]
   # entries to hand-edit source urls:  CNN, Yahoo, Monmouth
+  # duplicate bbc to include bbc.co.uk url as well as .com
 end
