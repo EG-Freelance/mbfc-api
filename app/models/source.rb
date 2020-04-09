@@ -85,14 +85,14 @@ class Source < ActiveRecord::Base
 
     ##### RECENTLY ADDED #####
     # (uses mechanize page from re-evaluations)
-    raw_els = page.css('.recently')[0].children
+    raw_els = page.css('.srpw-li')
     els = raw_els.css('li').to_a
     els.each do |el|
       src = el.css('a')[0].attributes
       new_source_hashes << {
         :mbfc_url => src['href'].value,
-        :name => src['title'].value,
-        :updated => DateTime.strptime(el.css('span')[0].text, "posted on %B %d, %Y")
+        :name => el.css('a')[0].text,
+        :updated => DateTime.strptime(el.css('.srpw-time')[0].text, "%B %d, %Y")
       }
     end
     ###########################
