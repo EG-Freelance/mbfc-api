@@ -320,7 +320,7 @@ class Source < ActiveRecord::Base
 
     sources = data_script.match(/current_json\s?=\s?(\{.*?);/)[1]
 
-    json = JSON.parse(sources)
+    json = eval(sources)
     # :b => bias
     # :d => base source URL
     # :h => full source URL
