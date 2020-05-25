@@ -347,9 +347,6 @@ class Source < ActiveRecord::Base
       end
     end
   end
-
-
-  end
   ##########################
 
   #### NOTES: ####
