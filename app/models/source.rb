@@ -188,6 +188,7 @@ class Source < ActiveRecord::Base
 
   ##### HELPER METHODS #####
   def self.get_metrics(info_hash, create_new)
+    # info_hash = { 'mbfc_url', 'name', 'updated' }
     agent = Mechanize.new
     page = agent.get(info_hash[:mbfc_url])
     metric_els = page.css('img').select { |i| !i.attributes['data-attachment-id'].nil? }
@@ -307,6 +308,47 @@ class Source < ActiveRecord::Base
     end
 
     return acc, bias, source, s_name
+  end
+
+  def self.scrub_all_listings
+    # use MBFC's filtered search page to correct any missed updates or miscoded metrics
+    # only works for bias, accuracy, and MBFC URL
+    agent = Mechanize.new
+    page = agent.get('https://mediabiasfactcheck.com/filtered-search/')
+
+    data_script = page.css('script').find { |s| s.text["getData()"] }.text.gsub(/\r\n/, "").gsub(/\t/, "")
+
+    sources = data_script.match(/current_json\s?=\s?(\{.*?);/)[1]
+
+    json = JSON.parse(sources)
+    # :b => bias
+    # :d => base source URL
+    # :h => full source URL
+    # :L => references
+    # :n => display name
+    # :r => accuracy
+    # :u => MBFC url
+    # :c => country
+
+    json.each do |source, values|
+      # 2020-05-24 -- verified that all current sources and all json sources end with '/'
+      puts "Saving information for #{source}"
+
+      if values[:u][-1].nil?
+        puts "Not saving for self"
+        next
+      end
+
+      s = Source.find_by(mbfc_url: values[:u])
+      if s
+        s.update(name: values[:n].downcase, display_name: values[:n], url: values[:h], bias: values[:b].downcase.gsub(" sources", ""), accuracy: values[:r], verified: Date.today.strftime("%Y-%m-%d"))
+      else
+        Source.create(name: values[:n].downcase, display_name: values[:n], url: values[:h], bias: values[:b].downcase.gsub(" sources", ""), accuracy: values[:r], verified: Date.today.strftime("%Y-%m-%d"), mbfc_url: values[:u])
+      end
+    end
+  end
+
+
   end
   ##########################
 
