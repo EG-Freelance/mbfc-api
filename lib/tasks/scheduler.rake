@@ -4,7 +4,7 @@ namespace :automate do
     Source.update_sources(recent)
   end
 
-  task :scrub_all => environment do
+  task :scrub_all => :environment do
     Source.scrub_all_listings
   end
 end
