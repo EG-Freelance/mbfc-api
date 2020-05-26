@@ -9,6 +9,10 @@ class ApplicationController < ActionController::API
     sources = Source.all.sort_by(&:name)
     sources_hash = {}
     sources.each do |source|
+      if source.url[/facebook/i]
+        # do not include any sources that use FB as their homepage for plugin -- will give incorrectly generalized results
+        next
+      end
       key = source.url.match(/(?:https?\:\/\/)?(?:www\.)?([A-Za-z0-9\.\-]*)\/?/)[1]
       sources_hash[key] = { 'bias' => source.bias, 'accuracy' => source.accuracy, 'href' => source.mbfc_url }
     end
