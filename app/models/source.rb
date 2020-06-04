@@ -339,11 +339,14 @@ class Source < ActiveRecord::Base
         next
       end
 
+      # need to fix entries that are broken with double HTTPs
+      url = values[:h].match(/((?:https?:\/\/)(?!https?:\/\/).*)/)[1]
+
       s = Source.find_by(mbfc_url: values[:u])
       if s
-        s.update(name: values[:n].downcase, display_name: values[:n], url: values[:h], bias: values[:b].downcase.gsub(" sources", "").gsub("conspiracy-pseudoscience", "conspiracy/pseudoscience"), accuracy: values[:r].downcase, verified: Date.today.strftime("%Y-%m-%d"))
+        s.update(name: values[:n].downcase, display_name: values[:n], url: url, bias: values[:b].downcase.gsub(" sources", "").gsub("conspiracy-pseudoscience", "conspiracy/pseudoscience"), accuracy: values[:r].downcase, verified: Date.today.strftime("%Y-%m-%d"))
       else
-        Source.create(name: values[:n].downcase, display_name: values[:n], url: values[:h], bias: values[:b].downcase.gsub(" sources", "").gsub("conspiracy-pseudoscience", "conspiracy/pseudoscience"), accuracy: values[:r].downcase, verified: Date.today.strftime("%Y-%m-%d"), mbfc_url: values[:u])
+        Source.create(name: values[:n].downcase, display_name: values[:n], url: url, bias: values[:b].downcase.gsub(" sources", "").gsub("conspiracy-pseudoscience", "conspiracy/pseudoscience"), accuracy: values[:r].downcase, verified: Date.today.strftime("%Y-%m-%d"), mbfc_url: values[:u])
       end
     end
   end
