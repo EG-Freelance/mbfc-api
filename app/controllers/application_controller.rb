@@ -13,7 +13,12 @@ class ApplicationController < ActionController::API
         # do not include any sources that use FB as their homepage for plugin -- will give incorrectly generalized results
         next
       end
-      key = source.url.match(/(?:https?\:\/\/)?(?:www\.)?([A-Za-z0-9\.\-]*)\/?/)[1]
+      if source.name == "borowitz report"
+        # special case for borowitz report
+        key = source.url
+      else
+        key = source.url.match(/(?:https?\:\/\/)?(?:www\.)?([A-Za-z0-9\.\-]*)\/?/)[1]
+      end
       sources_hash[key] = { 'bias' => source.bias, 'accuracy' => source.accuracy, 'href' => source.mbfc_url }
     end
     render :json => sources_hash
