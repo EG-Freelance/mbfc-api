@@ -310,7 +310,83 @@ class Source < ActiveRecord::Base
     return acc, bias, source, s_name
   end
 
+
   def self.scrub_all_listings
+    agent = Mechanize.new
+    page = agent.get("https://raw.githubusercontent.com/drmikecrowe/mbfcext/main/docs/v3/combined.json")
+
+    json = eval(page.body)
+    # :b => bias
+    # :d => base source URL
+    # :f => ASCII name
+    # :n => Name
+    # :r => Reliability (bias)
+    # :u => MBFC URL
+    # :P => ?
+    # :c => ?  Traffic?
+    # :a => ?
+
+    sources = json[:sources]
+
+    sources.each do |source, values|
+      acc_raw = values[:r]
+      bias_raw = values[:b]
+      mbfc_url = values[:u]
+      url = values[:d]
+      display_name = values[:n]
+      name_lower = display_name.downcase
+
+      case acc_raw
+      when "VL"
+        acc = "very low"
+      when "L"
+        acc = "low"
+      when "M"
+        acc = "mixed"
+      when "MF"
+        acc = "mostly factual"
+      when "H"
+        acc = "high"
+      when "VH"
+        acc = "very high"
+      else
+        acc = ""
+      end
+
+      case bias_raw
+      when "L"
+        bias = "left"
+      when "LC"
+        bias = "left-center"
+      when "C"
+        bias = "least biased"
+      when "RC"
+        bias = "right-center"
+      when "R"
+        bias = "right"
+      when "FN"
+        bias = "fake"
+      when "CP"
+        bias = "conspiracy/pseudoscience"
+      when "PS"
+        bias = "pro-science"
+      when "S"
+        bias = "satire"
+      else
+        bias = ""
+      end
+
+      Source.where(mbfc_url: mbfc_url).first_or_create.update(name: name_lower, display_name: display_name, url: url, bias: bias, accuracy: acc, verified: Date.today.strftime("%Y-%m-%d"))
+      # s = Source.find_by(mbfc_url: mbfc_url)
+      # if s
+      #   s.update(name: name_lower, display_name: display_name, url: url, bias: bias, accuracy: acc, verified: Date.today.strftime("%Y-%m-%d"))
+      # else
+      #   Source.create(name: name_lower, display_name: display_name, url: url, bias: bias, accuracy: acc, verified: Date.today.strftime("%Y-%m-%d", mbfc_url: mbfc_url)
+      # end
+    end
+  end
+
+  def self.scrub_all_listings_legacy
     # use MBFC's filtered search page to correct any missed updates or miscoded metrics
     # only works for bias, accuracy, and MBFC URL
     agent = Mechanize.new
