@@ -9,8 +9,10 @@ class ApplicationController < ActionController::API
     sources = Source.all.sort_by(&:name)
     sources_hash = {}
     sources.each do |source|
-      if source.url[/facebook/i]
+      p source.name
+      if !source.url || source.url[/facebook/i]
         # do not include any sources that use FB as their homepage for plugin -- will give incorrectly generalized results
+        # also ignore sources with no url
         next
       end
       if source.name == "borowitz report"
