@@ -336,6 +336,11 @@ class Source < ActiveRecord::Base
       display_name = values[:n]
       name_lower = display_name.downcase
 
+      # ignore entries that don't show an internal page
+      if !mbfc_url["mediabiasfactcheck.com"]
+        next
+      end
+
       case acc_raw
       when "VL"
         acc = "very low"
